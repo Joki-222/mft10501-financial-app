@@ -1,26 +1,9 @@
 """
-app.py — Week 10: HAI Portfolio Dashboard (Artistic Edition)
+app.py — Week 10: HAI Portfolio Dashboard (Artistic Edition - Improved Readability)
 
 Run with:
     pip install streamlit pandas plotly
     python -m streamlit run app.py
-
-Architecture:
-    ┌─────────────┐
-    │  Input Layer │  sample_data.py → client profile
-    └──────┬──────┘
-           ▼
-    ┌─────────────┐
-    │  Logic Layer │  logic.py → suitability, bucket, allocation, flags
-    └──────┬──────┘
-           ▼
-    ┌─────────────┐
-    │  HAI Layer   │  disclosure, confidence note, review trigger, override
-    └──────┬──────┘
-           ▼
-    ┌─────────────┐
-    │ Output Layer │  dashboard, assistant, memo, review log
-    └─────────────┘
 """
 
 import streamlit as st
@@ -46,7 +29,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# Custom CSS for artistic styling
+# Custom CSS for artistic styling with high contrast text
 st.markdown("""
 <style>
     /* Import Google Fonts */
@@ -58,27 +41,34 @@ st.markdown("""
         font-family: 'Inter', sans-serif;
     }
 
+    /* Ensure all text is white by default with slight shadow for readability */
+    body, .stMarkdown, .stText, .stWrite, .stMetric, .stAlert, .stInfo, .stSuccess, .stWarning, .stError, 
+    .stSelectbox label, .stSlider label, .stTextArea label, .stButton, .stExpander, .stTabs {
+        color: #ffffff !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
     /* Hide default Streamlit header and footer */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 
-    /* Cards and containers */
+    /* Cards and containers - slightly less transparent for better text readability */
     .stMarkdown, .stDataFrame, .stPlotlyChart, .stAlert, .stInfo, .stSuccess, .stWarning, .stError {
-        background: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(10px);
+        background: rgba(0, 0, 0, 0.4) !important;
+        backdrop-filter: blur(8px);
         border-radius: 20px;
         padding: 1rem;
         margin-bottom: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }
 
     /* Sidebar styling */
     section[data-testid="stSidebar"] {
-        background: rgba(0, 0, 0, 0.5);
+        background: rgba(0, 0, 0, 0.6);
         backdrop-filter: blur(12px);
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
+        border-right: 1px solid rgba(255, 255, 255, 0.15);
     }
 
     section[data-testid="stSidebar"] .stMarkdown, 
@@ -94,26 +84,30 @@ st.markdown("""
         color: #ffffff !important;
         font-weight: 600 !important;
         letter-spacing: -0.02em;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     }
 
     /* Metrics styling */
     .stMetric {
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(10px);
         border-radius: 20px;
         padding: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
         transition: transform 0.2s ease;
     }
     .stMetric:hover {
         transform: translateY(-4px);
-        background: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.2);
+    }
+    .stMetric label, .stMetric .stMetricValue, .stMetric .stMetricDelta {
+        color: #ffffff !important;
     }
 
     /* Buttons */
     .stButton button {
         background: linear-gradient(90deg, #ff6a88, #ff99ac);
-        color: white;
+        color: white !important;
         border: none;
         border-radius: 40px;
         padding: 0.5rem 1.5rem;
@@ -131,10 +125,10 @@ st.markdown("""
         background: rgba(255, 255, 255, 0.1);
         border-radius: 40px;
         border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white;
+        color: white !important;
     }
     .stSelectbox label {
-        color: rgba(255,255,255,0.7);
+        color: rgba(255,255,255,0.9) !important;
     }
 
     /* Tabs styling */
@@ -145,7 +139,7 @@ st.markdown("""
     }
     .stTabs [data-baseweb="tab"] {
         background: transparent;
-        color: rgba(255,255,255,0.6);
+        color: rgba(255,255,255,0.7) !important;
         font-weight: 500;
         padding: 0.5rem 1rem;
         border-radius: 40px;
@@ -157,22 +151,59 @@ st.markdown("""
 
     /* Expander */
     .streamlit-expanderHeader {
-        background: rgba(255,255,255,0.05);
+        background: rgba(255,255,255,0.1);
         border-radius: 20px;
-        color: white;
+        color: white !important;
     }
 
     /* Code blocks and json */
     pre, .stJson {
-        background: rgba(0,0,0,0.3) !important;
+        background: rgba(0,0,0,0.5) !important;
         border-radius: 16px !important;
-        border: 1px solid rgba(255,255,255,0.1) !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        color: #f0f0f0 !important;
     }
 
     /* Logout button in sidebar */
     .stSidebar .stButton button {
-        background: rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.2);
         backdrop-filter: blur(5px);
+    }
+
+    /* Info, success, warning, error boxes - override text color */
+    .stAlert p, .stInfo p, .stSuccess p, .stWarning p, .stError p {
+        color: #ffffff !important;
+    }
+    .stAlert {
+        background: rgba(0,0,0,0.6) !important;
+    }
+    .stInfo {
+        background: rgba(0,100,150,0.5) !important;
+    }
+    .stSuccess {
+        background: rgba(0,128,0,0.5) !important;
+    }
+    .stWarning {
+        background: rgba(255,165,0,0.5) !important;
+    }
+    .stError {
+        background: rgba(255,0,0,0.5) !important;
+    }
+
+    /* Sliders */
+    .stSlider > div > div > div {
+        background: rgba(255,255,255,0.2);
+    }
+    .stSlider label {
+        color: white !important;
+    }
+
+    /* Text area */
+    .stTextArea textarea {
+        background: rgba(0,0,0,0.5);
+        color: white;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.2);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -268,16 +299,17 @@ with tab_dash:
         fig_rec.update_traces(
             textposition='inside',
             textinfo='percent+label',
-            marker=dict(line=dict(color='rgba(0,0,0,0.5)', width=2)),
+            marker=dict(line=dict(color='rgba(255,255,255,0.3)', width=2)),
             pull=[0.05, 0, 0, 0],
+            textfont=dict(color='white', size=12),
         )
         fig_rec.update_layout(
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white', family='Inter'),
+            font=dict(color='white', family='Inter', size=12),
             margin=dict(t=20, b=20, l=20, r=20),
             height=350,
-            legend=dict(orientation="h", yanchor="bottom", y=-0.2),
+            legend=dict(orientation="h", yanchor="bottom", y=-0.2, font=dict(color='white')),
         )
         st.plotly_chart(fig_rec, use_container_width=True)
 
@@ -310,11 +342,13 @@ with tab_dash:
             barmode="group",
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white', family='Inter'),
+            font=dict(color='white', family='Inter', size=12),
             margin=dict(t=20, b=20, l=20, r=20),
             height=350,
             yaxis_tickformat=".0%",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02),
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, font=dict(color='white')),
+            xaxis=dict(tickfont=dict(color='white')),
+            yaxis=dict(tickfont=dict(color='white')),
         )
         st.plotly_chart(fig_comp, use_container_width=True)
 
