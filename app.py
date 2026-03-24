@@ -1,9 +1,26 @@
 """
-app.py — Week 10: HAI Portfolio Dashboard (Artistic Edition - Improved Readability)
+app.py — Week 10: HAI Portfolio Dashboard
 
 Run with:
     pip install streamlit pandas plotly
     python -m streamlit run app.py
+
+Architecture:
+    ┌─────────────┐
+    │  Input Layer │  sample_data.py → client profile
+    └──────┬──────┘
+           ▼
+    ┌─────────────┐
+    │  Logic Layer │  logic.py → suitability, bucket, allocation, flags
+    └──────┬──────┘
+           ▼
+    ┌─────────────┐
+    │  HAI Layer   │  disclosure, confidence note, review trigger, override
+    └──────┬──────┘
+           ▼
+    ┌─────────────┐
+    │ Output Layer │  dashboard, assistant, memo, review log
+    └─────────────┘
 """
 
 import streamlit as st
@@ -21,195 +38,16 @@ from utils import append_log, read_logs, clear_logs, format_weights_inline
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# Page config & custom CSS
+# Page config
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 st.set_page_config(
-    page_title="HAI Portfolio — Artistic Edition",
-    page_icon="🎨",
+    page_title="HAI Portfolio App — Week 10",
+    page_icon="📊",
     layout="wide",
 )
 
-# Custom CSS for artistic styling with high contrast text
-st.markdown("""
-<style>
-    /* Import Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-
-    /* Global styles */
-    .stApp {
-        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-        font-family: 'Inter', sans-serif;
-    }
-
-    /* Ensure all text is white by default with slight shadow for readability */
-    body, .stMarkdown, .stText, .stWrite, .stMetric, .stAlert, .stInfo, .stSuccess, .stWarning, .stError, 
-    .stSelectbox label, .stSlider label, .stTextArea label, .stButton, .stExpander, .stTabs {
-        color: #ffffff !important;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
-    }
-
-    /* Hide default Streamlit header and footer */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-
-    /* Cards and containers - slightly less transparent for better text readability */
-    .stMarkdown, .stDataFrame, .stPlotlyChart, .stAlert, .stInfo, .stSuccess, .stWarning, .stError {
-        background: rgba(0, 0, 0, 0.4) !important;
-        backdrop-filter: blur(8px);
-        border-radius: 20px;
-        padding: 1rem;
-        margin-bottom: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    }
-
-    /* Sidebar styling */
-    section[data-testid="stSidebar"] {
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(12px);
-        border-right: 1px solid rgba(255, 255, 255, 0.15);
-    }
-
-    section[data-testid="stSidebar"] .stMarkdown, 
-    section[data-testid="stSidebar"] .stMetric {
-        background: transparent;
-        box-shadow: none;
-        border: none;
-        padding: 0;
-    }
-
-    /* Headers and text */
-    h1, h2, h3, h4, h5, h6, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
-        color: #ffffff !important;
-        font-weight: 600 !important;
-        letter-spacing: -0.02em;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-    }
-
-    /* Metrics styling */
-    .stMetric {
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border-radius: 20px;
-        padding: 1rem;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        transition: transform 0.2s ease;
-    }
-    .stMetric:hover {
-        transform: translateY(-4px);
-        background: rgba(255, 255, 255, 0.2);
-    }
-    .stMetric label, .stMetric .stMetricValue, .stMetric .stMetricDelta {
-        color: #ffffff !important;
-    }
-
-    /* Buttons */
-    .stButton button {
-        background: linear-gradient(90deg, #ff6a88, #ff99ac);
-        color: white !important;
-        border: none;
-        border-radius: 40px;
-        padding: 0.5rem 1.5rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    }
-    .stButton button:hover {
-        transform: scale(1.02);
-        box-shadow: 0 8px 25px rgba(255,105,135,0.3);
-    }
-
-    /* Selectbox and widgets */
-    .stSelectbox > div > div {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 40px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: white !important;
-    }
-    .stSelectbox label {
-        color: rgba(255,255,255,0.9) !important;
-    }
-
-    /* Tabs styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 2rem;
-        background: transparent;
-        border-bottom: 2px solid rgba(255,255,255,0.1);
-    }
-    .stTabs [data-baseweb="tab"] {
-        background: transparent;
-        color: rgba(255,255,255,0.7) !important;
-        font-weight: 500;
-        padding: 0.5rem 1rem;
-        border-radius: 40px;
-    }
-    .stTabs [aria-selected="true"] {
-        background: linear-gradient(90deg, #ff6a88, #ff99ac);
-        color: white !important;
-    }
-
-    /* Expander */
-    .streamlit-expanderHeader {
-        background: rgba(255,255,255,0.1);
-        border-radius: 20px;
-        color: white !important;
-    }
-
-    /* Code blocks and json */
-    pre, .stJson {
-        background: rgba(0,0,0,0.5) !important;
-        border-radius: 16px !important;
-        border: 1px solid rgba(255,255,255,0.2) !important;
-        color: #f0f0f0 !important;
-    }
-
-    /* Logout button in sidebar */
-    .stSidebar .stButton button {
-        background: rgba(255,255,255,0.2);
-        backdrop-filter: blur(5px);
-    }
-
-    /* Info, success, warning, error boxes - override text color */
-    .stAlert p, .stInfo p, .stSuccess p, .stWarning p, .stError p {
-        color: #ffffff !important;
-    }
-    .stAlert {
-        background: rgba(0,0,0,0.6) !important;
-    }
-    .stInfo {
-        background: rgba(0,100,150,0.5) !important;
-    }
-    .stSuccess {
-        background: rgba(0,128,0,0.5) !important;
-    }
-    .stWarning {
-        background: rgba(255,165,0,0.5) !important;
-    }
-    .stError {
-        background: rgba(255,0,0,0.5) !important;
-    }
-
-    /* Sliders */
-    .stSlider > div > div > div {
-        background: rgba(255,255,255,0.2);
-    }
-    .stSlider label {
-        color: white !important;
-    }
-
-    /* Text area */
-    .stTextArea textarea {
-        background: rgba(0,0,0,0.5);
-        color: white;
-        border-radius: 16px;
-        border: 1px solid rgba(255,255,255,0.2);
-    }
-</style>
-""", unsafe_allow_html=True)
-
-st.title("🎨 HAI Portfolio Dashboard")
-st.caption("Human-AI Interaction · Artistic Financial Governance")
+st.title("📊 Week 10: HAI Portfolio Dashboard")
+st.caption("Human-AI Interaction in Financial Products — Governed Prototype")
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -219,9 +57,9 @@ if not check_password():
     st.stop()
 
 role = get_role()
-st.sidebar.success(f"👤 Logged in as: **{role}**")
+st.sidebar.success(f"Logged in as: **{role}**")
 
-if st.sidebar.button("🚪 Logout"):
+if st.sidebar.button("Logout"):
     for key in ["authenticated", "role"]:
         st.session_state.pop(key, None)
     st.rerun()
@@ -231,7 +69,7 @@ if st.sidebar.button("🚪 Logout"):
 # Sidebar: client selection
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 st.sidebar.markdown("---")
-st.sidebar.subheader("🎯 Select Client")
+st.sidebar.subheader("Select Client")
 client_name = st.sidebar.selectbox(
     "Client profile",
     list(SAMPLE_CLIENTS.keys()),
@@ -248,12 +86,12 @@ st.session_state["pipeline"] = pipeline
 
 # Show quick status in sidebar
 st.sidebar.markdown("---")
-st.sidebar.metric("📊 Risk Score", f"{client['risk_score_100']} / 100")
-st.sidebar.metric("🏷️ Bucket", pipeline["bucket"])
+st.sidebar.metric("Risk Score", f"{client['risk_score_100']} / 100")
+st.sidebar.metric("Bucket", pipeline["bucket"])
 if pipeline["review_required"]:
     st.sidebar.error(f"⚠️ Review required ({len(pipeline['flags'])} flag(s))")
 else:
-    st.sidebar.success("✅ No review flags")
+    st.sidebar.success("✓ No review flags")
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -275,10 +113,10 @@ with tab_dash:
 
     # ── Metrics row ──────────────────────────────────────────
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("📈 Risk Score", f"{client['risk_score_100']}/100")
-    m2.metric("🗂️ Risk Bucket", pipeline["bucket"])
-    m3.metric("⏳ Horizon", f"{client['horizon_years']} yrs")
-    m4.metric("🔮 Uncertainty", pipeline["uncertainty"].upper())
+    m1.metric("Risk Score", f"{client['risk_score_100']}/100")
+    m2.metric("Risk Bucket", pipeline["bucket"])
+    m3.metric("Horizon", f"{client['horizon_years']} yrs")
+    m4.metric("Uncertainty", pipeline["uncertainty"].upper())
 
     st.markdown("---")
 
@@ -286,35 +124,23 @@ with tab_dash:
     col_chart, col_compare = st.columns(2)
 
     with col_chart:
-        st.markdown("**🎨 Recommended Allocation**")
+        st.markdown("**Recommended Allocation**")
         w = pipeline["weights"]
-        # Artistic pie chart with neon colors
-        colors = px.colors.sequential.Viridis[::-1]
         fig_rec = px.pie(
             names=list(w.keys()),
             values=list(w.values()),
-            color_discrete_sequence=colors,
+            color_discrete_sequence=px.colors.qualitative.Set2,
             hole=0.4,
         )
-        fig_rec.update_traces(
-            textposition='inside',
-            textinfo='percent+label',
-            marker=dict(line=dict(color='rgba(255,255,255,0.3)', width=2)),
-            pull=[0.05, 0, 0, 0],
-            textfont=dict(color='white', size=12),
-        )
         fig_rec.update_layout(
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white', family='Inter', size=12),
             margin=dict(t=20, b=20, l=20, r=20),
-            height=350,
-            legend=dict(orientation="h", yanchor="bottom", y=-0.2, font=dict(color='white')),
+            height=300,
+            showlegend=True,
         )
         st.plotly_chart(fig_rec, use_container_width=True)
 
     with col_compare:
-        st.markdown("**🔄 Current vs Recommended**")
+        st.markdown("**Current vs Recommended**")
         current = client.get("current_weights", {})
         compare_df = pd.DataFrame({
             "Asset": list(w.keys()),
@@ -323,32 +149,18 @@ with tab_dash:
         })
         fig_comp = go.Figure()
         fig_comp.add_trace(go.Bar(
-            name="Current",
-            x=compare_df["Asset"],
+            name="Current", x=compare_df["Asset"],
             y=compare_df["Current"],
-            marker_color="rgba(255, 105, 135, 0.8)",
-            marker_line_color="rgba(255, 105, 135, 1)",
-            marker_line_width=1,
+            marker_color="lightcoral",
         ))
         fig_comp.add_trace(go.Bar(
-            name="Recommended",
-            x=compare_df["Asset"],
+            name="Recommended", x=compare_df["Asset"],
             y=compare_df["Recommended"],
-            marker_color="rgba(100, 200, 255, 0.8)",
-            marker_line_color="rgba(100, 200, 255, 1)",
-            marker_line_width=1,
+            marker_color="steelblue",
         ))
         fig_comp.update_layout(
-            barmode="group",
-            paper_bgcolor='rgba(0,0,0,0)',
-            plot_bgcolor='rgba(0,0,0,0)',
-            font=dict(color='white', family='Inter', size=12),
-            margin=dict(t=20, b=20, l=20, r=20),
-            height=350,
-            yaxis_tickformat=".0%",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, font=dict(color='white')),
-            xaxis=dict(tickfont=dict(color='white')),
-            yaxis=dict(tickfont=dict(color='white')),
+            barmode="group", margin=dict(t=20, b=20, l=20, r=20),
+            height=300, yaxis_tickformat=".0%",
         )
         st.plotly_chart(fig_comp, use_container_width=True)
 
@@ -362,11 +174,11 @@ with tab_dash:
             f"{flag_text}"
         )
     else:
-        st.success("✅ No review flags triggered.")
+        st.success("✓ No review flags triggered.")
 
     # ── Disclosure box (always visible, not hidden) ──────────
     st.info(
-        "**📢 Disclosure**\n\n"
+        "**Disclosure**\n\n"
         "This recommendation is based on questionnaire-derived risk scores "
         "and preset return assumptions. "
         "Tax status, external holdings, and recent market events are "
@@ -381,7 +193,7 @@ with tab_dash:
 # TAB 2: Assistant
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab_asst:
-    st.subheader("💡 Ask the Assistant")
+    st.subheader("Ask the Assistant")
     st.caption(
         "The assistant answers from **rule-based logic anchored to this "
         "client's state** — not from free-form language generation."
@@ -452,7 +264,7 @@ with tab_asst:
 # TAB 3: Memo Export
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab_memo:
-    st.subheader("📄 Investment Memo")
+    st.subheader("Investment Memo")
 
     memo_text = build_memo(client, pipeline)
 
@@ -478,7 +290,7 @@ with tab_memo:
         )
 
     # Log the export
-    if st.button("📝 Record memo export in audit log"):
+    if st.button("Record memo export in audit log"):
         append_log({
             "event": "memo_export",
             "client": client["name"],
@@ -496,11 +308,11 @@ with tab_memo:
 # TAB 4: Review Log
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 with tab_log:
-    st.subheader("🔍 Review & Override Log")
+    st.subheader("Review & Override Log")
 
     # ── Override section (reviewer only) ─────────────────────
     if can("override"):
-        st.markdown("### ✏️ Submit an Override")
+        st.markdown("### Submit an Override")
         st.caption("As a **reviewer**, you can override the recommendation.")
 
         with st.form("override_form"):
@@ -555,7 +367,7 @@ with tab_log:
 
     # ── Log display ──────────────────────────────────────────
     st.markdown("---")
-    st.markdown("### 📋 Audit Log")
+    st.markdown("### Audit Log")
 
     logs = read_logs()
     if not logs:
