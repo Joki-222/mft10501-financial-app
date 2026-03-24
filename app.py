@@ -126,10 +126,11 @@ with tab_dash:
     with col_chart:
         st.markdown("**Recommended Allocation**")
         w = pipeline["weights"]
+        # 饼图使用 Viridis 渐变色系（深紫→黄绿）
         fig_rec = px.pie(
             names=list(w.keys()),
             values=list(w.values()),
-            color_discrete_sequence=px.colors.qualitative.Set2,
+            color_discrete_sequence=px.colors.sequential.Viridis,
             hole=0.4,
         )
         fig_rec.update_layout(
@@ -147,20 +148,43 @@ with tab_dash:
             "Current": [current.get(k, 0) for k in w.keys()],
             "Recommended": list(w.values()),
         })
+        
+        # 柱状图：Current 系列使用 OrRd 渐变色，Recommended 系列使用 Blues 渐变色
+        # 每个柱子的颜色基于其数值（y值）渐变，数值越大颜色越深
+        current_vals = [current.get(k, 0) for k in w.keys()]
+        rec_vals = list(w.values())
+        
         fig_comp = go.Figure()
+        # Current 系列
         fig_comp.add_trace(go.Bar(
-            name="Current", x=compare_df["Asset"],
-            y=compare_df["Current"],
-            marker_color="lightcoral",
+            name="Current",
+            x=compare_df["Asset"],
+            y=current_vals,
+            marker=dict(
+                colorscale='OrRd',
+                color=current_vals,
+                cmin=0, cmax=1,
+                showscale=False,
+            ),
         ))
+        # Recommended 系列
         fig_comp.add_trace(go.Bar(
-            name="Recommended", x=compare_df["Asset"],
-            y=compare_df["Recommended"],
-            marker_color="steelblue",
+            name="Recommended",
+            x=compare_df["Asset"],
+            y=rec_vals,
+            marker=dict(
+                colorscale='Blues',
+                color=rec_vals,
+                cmin=0, cmax=1,
+                showscale=False,
+            ),
         ))
+        
         fig_comp.update_layout(
-            barmode="group", margin=dict(t=20, b=20, l=20, r=20),
-            height=300, yaxis_tickformat=".0%",
+            barmode="group",
+            margin=dict(t=20, b=20, l=20, r=20),
+            height=300,
+            yaxis_tickformat=".0%",
         )
         st.plotly_chart(fig_comp, use_container_width=True)
 
