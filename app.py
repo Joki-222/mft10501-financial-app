@@ -1,5 +1,5 @@
 """
-app.py — Week 10: HAI Portfolio Dashboard
+app.py — Week 10: HAI Portfolio Dashboard (Artistic Edition)
 
 Run with:
     pip install streamlit pandas plotly
@@ -38,15 +38,176 @@ from utils import append_log, read_logs, clear_logs, format_weights_inline
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# Page config
+# Page config & custom CSS (artistic styling)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 st.set_page_config(
     page_title="HAI Portfolio App — Week 10",
-    page_icon="📊",
+    page_icon="🎨",
     layout="wide",
 )
 
-st.title("📊 Week 10: HAI Portfolio Dashboard")
+# Custom CSS for artistic look with high readability
+st.markdown("""
+<style>
+    /* Import font */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    /* Global body */
+    .stApp {
+        background: linear-gradient(135deg, #0b0b2b 0%, #1a1a3a 50%, #2a2a4a 100%);
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Force all text to be white with shadow for readability */
+    body, .stMarkdown, .stText, .stWrite, .stMetric, .stAlert, .stInfo, .stSuccess, .stWarning, .stError,
+    .stSelectbox label, .stSlider label, .stTextArea label, .stButton, .stExpander, .stTabs,
+    .stMetric label, .stMetric .stMetricValue, .stMetric .stMetricDelta {
+        color: #ffffff !important;
+        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
+
+    /* Hide default header/footer */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+
+    /* Cards and containers - semi-transparent with blur */
+    .stMarkdown, .stDataFrame, .stPlotlyChart, .stAlert, .stInfo, .stSuccess, .stWarning, .stError {
+        background: rgba(0, 0, 0, 0.45) !important;
+        backdrop-filter: blur(10px);
+        border-radius: 24px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    }
+
+    /* Sidebar styling */
+    section[data-testid="stSidebar"] {
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(12px);
+        border-right: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    section[data-testid="stSidebar"] .stMarkdown,
+    section[data-testid="stSidebar"] .stMetric {
+        background: transparent;
+        box-shadow: none;
+        border: none;
+        padding: 0;
+    }
+
+    /* Headers */
+    h1, h2, h3, h4, h5, h6, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+        color: #ffffff !important;
+        font-weight: 600 !important;
+        letter-spacing: -0.02em;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+
+    /* Metric cards */
+    .stMetric {
+        background: rgba(255, 255, 255, 0.12);
+        backdrop-filter: blur(8px);
+        border-radius: 20px;
+        padding: 1rem;
+        border: 1px solid rgba(255, 255, 255, 0.25);
+        transition: transform 0.2s ease;
+    }
+    .stMetric:hover {
+        transform: translateY(-4px);
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Buttons */
+    .stButton button {
+        background: linear-gradient(90deg, #ff6a88, #ff99ac);
+        color: white !important;
+        border: none;
+        border-radius: 40px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .stButton button:hover {
+        transform: scale(1.02);
+        box-shadow: 0 8px 20px rgba(255,105,135,0.3);
+    }
+
+    /* Selectbox and widgets */
+    .stSelectbox > div > div {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 40px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white !important;
+    }
+    .stSelectbox label {
+        color: rgba(255,255,255,0.9) !important;
+    }
+
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 2rem;
+        background: transparent;
+        border-bottom: 2px solid rgba(255,255,255,0.1);
+    }
+    .stTabs [data-baseweb="tab"] {
+        background: transparent;
+        color: rgba(255,255,255,0.7) !important;
+        font-weight: 500;
+        padding: 0.5rem 1rem;
+        border-radius: 40px;
+    }
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(90deg, #ff6a88, #ff99ac);
+        color: white !important;
+    }
+
+    /* Expander */
+    .streamlit-expanderHeader {
+        background: rgba(255,255,255,0.1);
+        border-radius: 20px;
+        color: white !important;
+    }
+
+    /* Code blocks */
+    pre, .stJson {
+        background: rgba(0,0,0,0.5) !important;
+        border-radius: 16px !important;
+        border: 1px solid rgba(255,255,255,0.2) !important;
+        color: #f0f0f0 !important;
+    }
+
+    /* Alert boxes */
+    .stAlert p, .stInfo p, .stSuccess p, .stWarning p, .stError p {
+        color: #ffffff !important;
+    }
+    .stAlert { background: rgba(0,0,0,0.6) !important; }
+    .stInfo { background: rgba(0,100,150,0.5) !important; }
+    .stSuccess { background: rgba(0,128,0,0.5) !important; }
+    .stWarning { background: rgba(255,165,0,0.5) !important; }
+    .stError { background: rgba(255,0,0,0.5) !important; }
+
+    /* Sliders */
+    .stSlider > div > div > div {
+        background: rgba(255,255,255,0.2);
+    }
+    .stSlider label {
+        color: white !important;
+    }
+
+    /* Text area */
+    .stTextArea textarea {
+        background: rgba(0,0,0,0.5);
+        color: white;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Updated title with "joki L"
+st.title("📊joki L Week 10: HAI Portfolio Dashboard")
 st.caption("Human-AI Interaction in Financial Products — Governed Prototype")
 
 
@@ -126,14 +287,23 @@ with tab_dash:
     with col_chart:
         st.markdown("**Recommended Allocation**")
         w = pipeline["weights"]
-        # 饼图使用 Viridis 渐变色系（深紫→黄绿）
+        # 使用更鲜艳的渐变色盘 Plasma
         fig_rec = px.pie(
             names=list(w.keys()),
             values=list(w.values()),
-            color_discrete_sequence=px.colors.sequential.Viridis,
+            color_discrete_sequence=px.colors.sequential.Plasma,
             hole=0.4,
         )
+        fig_rec.update_traces(
+            textposition='inside',
+            textinfo='percent+label',
+            marker=dict(line=dict(color='rgba(255,255,255,0.3)', width=2)),
+            textfont=dict(color='white', size=12),
+        )
         fig_rec.update_layout(
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white', family='Inter'),
             margin=dict(t=20, b=20, l=20, r=20),
             height=300,
             showlegend=True,
@@ -148,12 +318,11 @@ with tab_dash:
             "Current": [current.get(k, 0) for k in w.keys()],
             "Recommended": list(w.values()),
         })
-        
-        # 柱状图：Current 系列使用 OrRd 渐变色，Recommended 系列使用 Blues 渐变色
-        # 每个柱子的颜色基于其数值（y值）渐变，数值越大颜色越深
+
+        # 柱状图使用渐变色：Current 用 Viridis，Recommended 用 Cividis
         current_vals = [current.get(k, 0) for k in w.keys()]
         rec_vals = list(w.values())
-        
+
         fig_comp = go.Figure()
         # Current 系列
         fig_comp.add_trace(go.Bar(
@@ -161,7 +330,7 @@ with tab_dash:
             x=compare_df["Asset"],
             y=current_vals,
             marker=dict(
-                colorscale='OrRd',
+                colorscale='Viridis',
                 color=current_vals,
                 cmin=0, cmax=1,
                 showscale=False,
@@ -173,18 +342,23 @@ with tab_dash:
             x=compare_df["Asset"],
             y=rec_vals,
             marker=dict(
-                colorscale='Blues',
+                colorscale='Cividis',
                 color=rec_vals,
                 cmin=0, cmax=1,
                 showscale=False,
             ),
         ))
-        
+
         fig_comp.update_layout(
             barmode="group",
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font=dict(color='white', family='Inter'),
             margin=dict(t=20, b=20, l=20, r=20),
             height=300,
             yaxis_tickformat=".0%",
+            xaxis=dict(tickfont=dict(color='white')),
+            yaxis=dict(tickfont=dict(color='white')),
         )
         st.plotly_chart(fig_comp, use_container_width=True)
 
